@@ -28,6 +28,7 @@ function! imap#ListHeaders(folder, ...)
     execute "normal i".imap#CurlRequest(a:folder, "FETCH ".join(list, ',')." ALL")
     normal dG
     nnoremap <buffer> <silent> <cr> :call imap#Mail(b:mail_folder, split(getline('.'))[1])<cr>
+    nnoremap <buffer> <silent> b :call imap#BackFolder(b:mail_folder)<cr>
     setlocal nomodified
     setlocal nomodifiable
 endfunction
@@ -38,9 +39,16 @@ function! imap#ListFolders(folder)
     execute "normal i".imap#CurlRequest(a:folder, "")
     normal dGgg
     nnoremap <buffer> <silent> l :call imap#ListFolders(b:mail_folder.split(split(getline('.'))[-1], '"')[0])<cr>
+    nnoremap <buffer> <silent> b :call imap#BackFolder(b:mail_folder)<cr>
     nnoremap <buffer> <silent> <cr> :call imap#ListHeaders(b:mail_folder.split(split(getline('.'))[-1], '"')[0]."/", 0, 10)<cr>
     setlocal nomodified
     setlocal nomodifiable
+endfunction
+
+function! imap#BackFolder(folder)
+    let list = split(a:folder, '/')
+    call remove(list, len(list) - 1)
+    call imap#ListFolders(join(list, '/'))
 endfunction
 
 function! imap#Mail(folder, uid)

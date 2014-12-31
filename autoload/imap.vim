@@ -5,14 +5,20 @@ function! imap#CurlRequest(path, request)
     endif
 
     let path = join(filter(split(a:path, '/'), 'v:val != ""'), '/')
-    return system('curl --silent --ssl '.
+    let response = system('curl --verbose --ssl '.
                 \' --url "'.g:mail_imap_server.'/'.path.'" '.
                 \ '--user '.g:mail_address.':'.g:mail_password.' '.
                 \ request)
+    let splited = split(response, '\n')
+    let filtered = filter(splited, 'v:val =~ "^< "')
+    let mapped = map(filtered, 'substitute(v:val, "^< ", "", "")')
+    return join(mapped, "\n")
 endfunction
 
 function! imap#FolderUIDs(folder)
-    let list = split(imap#CurlRequest(a:folder, "SEARCH ALL"), " ")
+    let splited = split(imap#CurlRequest(a:folder, "SEARCH ALL"), "\n")
+    let filtered = join(filter(splited, 'v:val =~ "^\* SEARCH"'), "")
+    let list = split(filtered, " ")
     call remove(list, 0, 1)
     call map(list, 'str2nr(v:val)')
     call reverse(list)
@@ -54,7 +60,7 @@ endfunction
 function! imap#Mail(folder, uid)
     new
     let b:mail_folder = a:folder
-    execute "normal i".imap#CurlRequest(a:folder.'/;UID='.a:uid, "")
+    execute "normal i".imap#CurlRequest(a:folder, 'FETCH '.a:uid.' BODY.PEEK[TEXT]')
     normal dGgg
     nnoremap <buffer> <silent> r :call smtp#Reply()<cr>
     setlocal filetype=mail

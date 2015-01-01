@@ -28,27 +28,29 @@ function! imap#ListHeaders(folder, ...)
     if a:0 > 1 && a:1 > 0 | call remove(list, 0, a:1 - 1) | endif
     call mail#GotoBuffer()
     let b:mail_folder = a:folder
+    setlocal modifiable
     normal ggdG
     let request = imap#CurlRequest(a:folder, "FETCH ".join(list, ',')." ALL")
     call append(0, filter(request, 'v:val =~# "^\* \\d\\+ FETCH"'))
     normal G
+    setlocal nomodifiable
+    setlocal nomodified
     nnoremap <buffer> <silent> <cr> :call imap#Mail(b:mail_folder, split(getline('.'))[1])<cr>
     nnoremap <buffer> <silent> b :call imap#BackFolder(b:mail_folder)<cr>
-    setlocal nomodified
-    setlocal nomodifiable
 endfunction
 
 function! imap#ListFolders(folder)
     call mail#GotoBuffer()
     let b:mail_folder = a:folder
+    setlocal modifiable
     normal ggdG
     call append(0, filter(imap#CurlRequest(a:folder, ""), 'v:val =~# "^\* LIST "'))
     normal gg
+    setlocal nomodified
+    setlocal nomodifiable
     nnoremap <buffer> <silent> l :call imap#ListFolders(b:mail_folder.split(split(getline('.'))[-1], '"')[0])<cr>
     nnoremap <buffer> <silent> b :call imap#BackFolder(b:mail_folder)<cr>
     nnoremap <buffer> <silent> <cr> :call imap#ListHeaders(b:mail_folder.split(split(getline('.'))[-1], '"')[0]."/", 0, 10)<cr>
-    setlocal nomodified
-    setlocal nomodifiable
 endfunction
 
 function! imap#BackFolder(folder)

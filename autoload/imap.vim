@@ -11,14 +11,11 @@ function! imap#CurlRequest(path, request)
                 \ request)
     let splited = split(response, '\n')
     let filtered = filter(splited, 'v:val =~ "^< "')
-    let mapped = map(filtered, 'substitute(v:val, "^< ", "", "")')
-    return join(mapped, "\n")
+    return map(filtered, 'substitute(v:val, "\\(^< \\|\\r\\)", "", "g")')
 endfunction
 
 function! imap#FolderUIDs(folder)
-    let splited = split(imap#CurlRequest(a:folder, "SEARCH ALL"), "\n")
-    let filtered = join(filter(splited, 'v:val =~ "^\* SEARCH"'), "")
-    let list = split(filtered, " ")
+    let list = split(join(filter(imap#CurlRequest(a:folder, "SEARCH ALL"), 'v:val =~# "^\\* SEARCH "'), ""), " ")
     call remove(list, 0, 1)
     call map(list, 'str2nr(v:val)')
     call reverse(list)
@@ -31,8 +28,10 @@ function! imap#ListHeaders(folder, ...)
     if a:0 > 1 && a:1 > 0 | call remove(list, 0, a:1 - 1) | endif
     call mail#GotoBuffer()
     let b:mail_folder = a:folder
-    execute "normal i".imap#CurlRequest(a:folder, "FETCH ".join(list, ',')." ALL")
-    normal dG
+    normal ggdG
+    let request = imap#CurlRequest(a:folder, "FETCH ".join(list, ',')." ALL")
+    call append(0, filter(request, 'v:val =~# "^\* \\d\\+ FETCH"'))
+    normal G
     nnoremap <buffer> <silent> <cr> :call imap#Mail(b:mail_folder, split(getline('.'))[1])<cr>
     nnoremap <buffer> <silent> b :call imap#BackFolder(b:mail_folder)<cr>
     setlocal nomodified
@@ -42,8 +41,9 @@ endfunction
 function! imap#ListFolders(folder)
     call mail#GotoBuffer()
     let b:mail_folder = a:folder
-    execute "normal i".imap#CurlRequest(a:folder, "")
-    normal dGgg
+    normal ggdG
+    call append(0, filter(imap#CurlRequest(a:folder, ""), 'v:val =~# "^\* LIST "'))
+    normal gg
     nnoremap <buffer> <silent> l :call imap#ListFolders(b:mail_folder.split(split(getline('.'))[-1], '"')[0])<cr>
     nnoremap <buffer> <silent> b :call imap#BackFolder(b:mail_folder)<cr>
     nnoremap <buffer> <silent> <cr> :call imap#ListHeaders(b:mail_folder.split(split(getline('.'))[-1], '"')[0]."/", 0, 10)<cr>
@@ -60,8 +60,14 @@ endfunction
 function! imap#Mail(folder, uid)
     new
     let b:mail_folder = a:folder
-    execute "normal i".imap#CurlRequest(a:folder, 'FETCH '.a:uid.' BODY.PEEK[TEXT]')
-    normal dGgg
+    let request = imap#CurlRequest(a:folder, 'FETCH '.a:uid.' (BODY[HEADER.FIELDS (FROM TO SUBJECT DATE)] BODY[TEXT])')
+    call filter(request, 'v:val !~# "\\(^\\* \\|^\\a\\d\\+ OK \\)"')
+    let header = remove(request, -7, -1)
+    call remove(header, 0)
+    call remove(header, -2, -1)
+    call append(0, header)
+    call append(line('$'), request)
+    normal gg
     nnoremap <buffer> <silent> r :call smtp#Reply()<cr>
     setlocal filetype=mail
     setlocal foldmethod=syntax foldlevel=0

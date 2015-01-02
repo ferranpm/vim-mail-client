@@ -22,6 +22,12 @@ function! imap#FolderUIDs(folder)
     return list
 endfunction
 
+function! imap#BasicMappings()
+    nnoremap <buffer> <silent> rh :call imap#RefreshHeaders(b:mail_folder)<cr>:call imap#ListHeaders(b:mail_folder)<cr>
+    nnoremap <buffer> <silent> rf :call imap#RefreshFolders(b:mail_folder)<cr>:call imap#ListFolders(b:mail_folder)<cr>
+    nnoremap <buffer> <silent> b :call imap#BackFolder(b:mail_folder)<cr>
+endfunction
+
 function! imap#CreateIfNecessary(folder)
     let local_path = expand(g:mail_folder.'/'.a:folder)
     if !isdirectory(local_path)
@@ -62,8 +68,8 @@ function! imap#ListHeaders(folder)
     normal G
     setlocal nomodifiable
     setlocal nomodified
+    call imap#BasicMappings()
     nnoremap <buffer> <silent> <cr> :call imap#Mail(b:mail_folder, split(getline('.'))[1])<cr>
-    nnoremap <buffer> <silent> b :call imap#BackFolder(b:mail_folder)<cr>
 endfunction
 
 function! imap#ListFolders(folder)
@@ -81,9 +87,9 @@ function! imap#ListFolders(folder)
     normal gg
     setlocal nomodified
     setlocal nomodifiable
+    call imap#BasicMappings()
     nnoremap <buffer> <silent> l :call imap#ListFolders(b:mail_folder.split(split(getline('.'))[-1], '"')[0])<cr>
-    nnoremap <buffer> <silent> b :call imap#BackFolder(b:mail_folder)<cr>
-    nnoremap <buffer> <silent> <cr> :call imap#ListHeaders(b:mail_folder.split(split(getline('.'))[-1], '"')[0]."/", 0, 10)<cr>
+    nnoremap <buffer> <silent> <cr> :call imap#ListHeaders(b:mail_folder.split(split(getline('.'))[-1], '"')[0]."/")<cr>
 endfunction
 
 function! imap#BackFolder(folder)

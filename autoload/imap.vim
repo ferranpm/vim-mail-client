@@ -49,6 +49,7 @@ function! imap#RefreshFolders(folder)
     call imap#CreateIfNecessary(a:folder)
     let file_path = expand(g:mail_folder.'/'.a:folder).'/folder'
     let lines = filter(imap#CurlRequest(a:folder, ""), 'v:val =~# "^\* LIST "')
+    call map(lines, 'substitute(v:val, "^\\* LIST (.*) \"/\" \"\\(.*\\)\"", "\\1", "")')
     call writefile(lines, file_path)
     return lines
 endfunction
@@ -88,8 +89,8 @@ function! imap#ListFolders(folder)
     setlocal nomodified
     setlocal nomodifiable
     call imap#BasicMappings()
-    nnoremap <buffer> <silent> l :call imap#ListFolders(b:mail_folder.split(split(getline('.'))[-1], '"')[0])<cr>
-    nnoremap <buffer> <silent> <cr> :call imap#ListHeaders(b:mail_folder.split(split(getline('.'))[-1], '"')[0]."/")<cr>
+    nnoremap <buffer> <silent> l :call imap#ListFolders(b:mail_folder.getline('.'))<cr>
+    nnoremap <buffer> <silent> <cr> :call imap#ListHeaders(b:mail_folder.getline('.'))<cr>
 endfunction
 
 function! imap#BackFolder(folder)

@@ -32,3 +32,7 @@ function! mail#Parse(filename)
     endfor
     return {'from': from, 'to': to}
 endfunction
+
+function! mail#GetLocalFolder(folder)
+    return expand(g:mail_folder.'/'.sha256(g:mail_address).'/'.a:folder)
+endfunction

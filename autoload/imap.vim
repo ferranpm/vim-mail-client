@@ -29,7 +29,7 @@ function! imap#BasicMappings()
 endfunction
 
 function! imap#CreateIfNecessary(folder)
-    let local_path = expand(g:mail_folder.'/'.a:folder)
+    let local_path = mail#GetLocalFolder(a:folder)
     if !isdirectory(local_path)
         call mkdir(local_path, "p")
     endif
@@ -37,7 +37,7 @@ endfunction
 
 function! imap#RefreshHeaders(folder)
     call imap#CreateIfNecessary(a:folder)
-    let file_path = expand(g:mail_folder.'/'.a:folder).'/mail'
+    let file_path = mail#GetLocalFolder(a:folder).'/mail'
     let list = imap#FolderUIDs(a:folder)
     let request = imap#CurlRequest(a:folder, "FETCH ".join(list, ',')." ALL")
     let lines = filter(request, 'v:val =~# "^\* \\d\\+ FETCH"')
@@ -47,7 +47,7 @@ endfunction
 
 function! imap#RefreshFolders(folder)
     call imap#CreateIfNecessary(a:folder)
-    let file_path = expand(g:mail_folder.'/'.a:folder).'/folder'
+    let file_path = mail#GetLocalFolder(a:folder).'/folder'
     let lines = filter(imap#CurlRequest(a:folder, ""), 'v:val =~# "^\* LIST "')
     call map(lines, 'substitute(v:val, "^\\* LIST (.*) \"/\" \"\\(.*\\)\"", "\\1", "")')
     call writefile(lines, file_path)
@@ -55,7 +55,7 @@ function! imap#RefreshFolders(folder)
 endfunction
 
 function! imap#ListHeaders(folder)
-    let file_path = expand(g:mail_folder.'/'.a:folder).'/mail'
+    let file_path = mail#GetLocalFolder(a:folder).'/mail'
     if filereadable(file_path)
         let lines = readfile(file_path)
     else
@@ -74,7 +74,7 @@ function! imap#ListHeaders(folder)
 endfunction
 
 function! imap#ListFolders(folder)
-    let file_path = expand(g:mail_folder.'/'.a:folder).'/folder'
+    let file_path = mail#GetLocalFolder(a:folder).'/folder'
     if filereadable(file_path)
         let lines = readfile(file_path)
     else

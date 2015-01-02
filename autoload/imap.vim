@@ -22,16 +22,43 @@ function! imap#FolderUIDs(folder)
     return list
 endfunction
 
-function! imap#ListHeaders(folder, ...)
+function! imap#CreateIfNecessary(folder)
+    let local_path = expand(g:mail_folder.'/'.a:folder)
+    if !isdirectory(local_path)
+        call mkdir(local_path, "p")
+    endif
+endfunction
+
+function! imap#RefreshHeaders(folder)
+    call imap#CreateIfNecessary(a:folder)
+    let file_path = expand(g:mail_folder.'/'.a:folder).'/mail'
     let list = imap#FolderUIDs(a:folder)
-    if a:0 == 2 | call remove(list, a:1 + a:2, -1) | endif
-    if a:0 > 1 && a:1 > 0 | call remove(list, 0, a:1 - 1) | endif
+    let request = imap#CurlRequest(a:folder, "FETCH ".join(list, ',')." ALL")
+    let lines = filter(request, 'v:val =~# "^\* \\d\\+ FETCH"')
+    call writefile(lines, file_path)
+    return lines
+endfunction
+
+function! imap#RefreshFolders(folder)
+    call imap#CreateIfNecessary(a:folder)
+    let file_path = expand(g:mail_folder.'/'.a:folder).'/folder'
+    let lines = filter(imap#CurlRequest(a:folder, ""), 'v:val =~# "^\* LIST "')
+    call writefile(lines, file_path)
+    return lines
+endfunction
+
+function! imap#ListHeaders(folder)
+    let file_path = expand(g:mail_folder.'/'.a:folder).'/mail'
+    if filereadable(file_path)
+        let lines = readfile(file_path)
+    else
+        let lines = imap#RefreshHeaders(a:folder)
+    endif
     call mail#GotoBuffer()
     let b:mail_folder = a:folder
     setlocal modifiable
     normal ggdG
-    let request = imap#CurlRequest(a:folder, "FETCH ".join(list, ',')." ALL")
-    call append(0, filter(request, 'v:val =~# "^\* \\d\\+ FETCH"'))
+    call append(0, lines)
     normal G
     setlocal nomodifiable
     setlocal nomodified
@@ -40,11 +67,17 @@ function! imap#ListHeaders(folder, ...)
 endfunction
 
 function! imap#ListFolders(folder)
+    let file_path = expand(g:mail_folder.'/'.a:folder).'/folder'
+    if filereadable(file_path)
+        let lines = readfile(file_path)
+    else
+        let lines = imap#RefreshFolders(a:folder)
+    endif
     call mail#GotoBuffer()
     let b:mail_folder = a:folder
     setlocal modifiable
     normal ggdG
-    call append(0, filter(imap#CurlRequest(a:folder, ""), 'v:val =~# "^\* LIST "'))
+    call append(0, lines)
     normal gg
     setlocal nomodified
     setlocal nomodifiable

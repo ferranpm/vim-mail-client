@@ -7,4 +7,4 @@ if !exists('g:mail_folder')      | let g:mail_folder      = "~/.vim-mail" | endi
 command! -nargs=0 SMTPNew  call smtp#New()
 command! -nargs=0 SMTPSend call smtp#Send('%')
 
-command! -nargs=0 Mail call imap#ListFolders("")
+command! -nargs=0 Mail call imap#ShowFolders("")

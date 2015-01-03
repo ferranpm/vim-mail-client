@@ -54,6 +54,13 @@ function! imap#RefreshFolders(folder)
     return lines
 endfunction
 
+function! imap#RefreshRecursive(folder)
+    call imap#RefreshHeaders(a:folder)
+    for folder in imap#RefreshFolders(a:folder)
+        call imap#RefreshRecursive(a:folder.'/'.folder)
+    endfor
+endfunction
+
 function! imap#ListHeaders(folder)
     let file_path = mail#GetLocalFolder(a:folder).'/mail'
     if filereadable(file_path)

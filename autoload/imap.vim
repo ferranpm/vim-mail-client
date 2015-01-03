@@ -79,9 +79,10 @@ function! imap#RefreshFolders(folder)
 endfunction
 
 function! imap#RefreshRecursive(folder)
+    echo "Refreshing: ".a:folder
     call imap#RefreshHeaders(a:folder)
     for folder in imap#RefreshFolders(a:folder)
-        call imap#RefreshRecursive(a:folder.'/'.folder)
+        call imap#RefreshRecursive(a:folder.'/'.split(folder, '"')[-1])
     endfor
 endfunction
 

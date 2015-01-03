@@ -16,7 +16,9 @@ endfunction
 
 function! imap#FolderUIDs(folder)
     let list = split(join(filter(imap#CurlRequest(a:folder, "SEARCH ALL"), 'v:val =~# "^\\* SEARCH "'), ""), " ")
-    call remove(list, 0, 1)
+    if len(list) > 0
+        call remove(list, 0, 1)
+    endif
     call map(list, 'str2nr(v:val)')
     call reverse(list)
     return list
@@ -58,7 +60,11 @@ function! imap#RefreshHeaders(folder)
     call imap#CreateIfNecessary(a:folder)
     let file_path = mail#GetLocalFolder(a:folder).'/mail'
     let list = imap#FolderUIDs(a:folder)
-    let request = imap#CurlRequest(a:folder, "FETCH ".join(list, ',')." ALL")
+    if len(list) > 0
+        let request = imap#CurlRequest(a:folder, "FETCH ".join(list, ',')." ALL")
+    else
+        let request = []
+    endif
     let lines = filter(request, 'v:val =~# "^\* \\d\\+ FETCH"')
     call writefile(lines, file_path)
     return lines

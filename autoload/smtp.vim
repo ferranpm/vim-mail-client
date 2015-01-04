@@ -1,5 +1,5 @@
 function! smtp#New()
-    let filename = '/tmp/vim_mail_'.localtime().'.mail'
+    let filename = '/tmp/vim_mail_'.localtime().'.eml'
     execute 'split '.filename
 
     call inputsave()

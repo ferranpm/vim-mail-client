@@ -144,22 +144,42 @@ function! imap#BackFolder(folder)
 endfunction
 
 function! imap#Mail(folder, uid)
-    new
+    let file_path = mail#GetLocalFolder(a:folder).'/'.a:uid.'.eml'
+    call mail#GotoBuffer(string(a:uid))
     let b:mail_folder = a:folder
-    let lines = []
-
+    if filereadable(file_path)
+        let lines = readfile(file_path)
+    else
 ruby << EOF
-    uid = VIM::evaluate('a:uid').to_i
-    folder = VIM::evaluate('a:folder')
-    imap = Net::IMAP.vim_login
-    imap.select(folder)
-    data = imap.fetch(imap.search(["UID", uid]), ["RFC822"])
-    imap.vim_logout
-    if data
-        VIM::command("let lines = #{data[0].attr["RFC822"].gsub(/\r\n|\r|\n/, '\n').split('\n')}")
-    end
+        uid = VIM::evaluate('a:uid').to_i
+        folder = VIM::evaluate('a:folder')
+        imap = Net::IMAP.vim_login
+        imap.select(folder)
+        data = imap.fetch(imap.search(["UID", uid]), ["RFC822"])
+        imap.vim_logout
+        if data
+            lines = data[0].attr["RFC822"].gsub(/\r\n|\r|\n/, '\n').split('\n')
+            VIM::command("let lines = #{lines}")
+        end
 EOF
-
+        call writefile(lines, file_path)
+    endif
+ruby << EOF
+    mail = Mail.read(VIM::evaluate('file_path'))
+    lines = []
+    lines << "Date: #{mail.date.to_s}"
+    lines << "From: <#{mail.from.join('>, <')}>"
+    lines << "To: <#{mail.to.join('>, <')}>"
+    if mail.cc then lines << "CC: <#{mail.cc.join('>, <')}>" end
+    lines << "Subject: #{mail.subject}"
+    lines << ""
+    parts = mail.multipart? ? mail.parts.select { |p| p.content_type =~ /^text\/plain/ } : [mail]
+    if mail.multipart? and parts.empty? then parts.concat([mail]) end
+    lines.concat parts.map { |p| p.body.decoded.split(/\r\n|\r|\n/) }.flatten
+    VIM::command("let lines = #{lines}")
+EOF
+    setlocal modifiable
+    normal ggdG
     call append(0, lines)
     normal gg
     nnoremap <buffer> <silent> r :call smtp#Reply()<cr>

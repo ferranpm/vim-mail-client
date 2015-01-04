@@ -4,7 +4,9 @@
     let g:mail_address="myusername@gmail.com"
     let g:mail_password="PassWord1234"
     let g:mail_smtp_server="smtps://smtp.gmail.com:465"
-    let g:mail_imap_server="imaps://imap.gmail.com:993"
+    let g:mail_imap_server="imap.gmail.com"
+    let g:mail_imap_port=993
+    let g:mail_imap_ssl=1
 
 ## Usage
 

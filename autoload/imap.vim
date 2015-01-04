@@ -1,28 +1,26 @@
-function! imap#CurlRequest(path, request)
-    let request = ""
-    if a:request != ""
-        let request = ' --request "'.a:request.'"'
-    endif
+ruby require 'net/imap'
 
-    let path = join(filter(split(a:path, '/'), 'v:val != ""'), '/')
-    let response = system('curl --verbose --ssl '.
-                \' --url "'.g:mail_imap_server.'/'.path.'" '.
-                \ '--user '.g:mail_address.':'.g:mail_password.' '.
-                \ request)
-    let splited = split(response, '\n')
-    let filtered = filter(splited, 'v:val =~ "^< "')
-    return map(filtered, 'substitute(v:val, "\\(^< \\|\\r\\)", "", "g")')
-endfunction
+ruby << EOF
+module Net
+    class IMAP
+        def self.vim_login
+            address  = VIM::evaluate('g:mail_address')
+            password = VIM::evaluate('g:mail_password')
+            server   = VIM::evaluate('g:mail_imap_server')
+            port     = VIM::evaluate('g:mail_imap_port').to_i
+            ssl      = VIM::evaluate('g:mail_imap_ssl').to_i == 1 ? true : false
+            imap     = Net::IMAP.new(server, port, ssl)
+            imap.login(address, password)
+            return imap
+        end
 
-function! imap#FolderUIDs(folder)
-    let list = split(join(filter(imap#CurlRequest(a:folder, "SEARCH ALL"), 'v:val =~# "^\\* SEARCH "'), ""), " ")
-    if len(list) > 0
-        call remove(list, 0, 1)
-    endif
-    call map(list, 'str2nr(v:val)')
-    call reverse(list)
-    return list
-endfunction
+        def vim_logout
+            self.logout
+            self.disconnect
+        end
+    end
+end
+EOF
 
 function! imap#BasicMappings()
     nnoremap <buffer> <silent> rh :call imap#RefreshHeaders(b:mail_folder)<cr>:call imap#ShowHeaders(b:mail_folder)<cr>
@@ -37,35 +35,28 @@ function! imap#CreateIfNecessary(folder)
     endif
 endfunction
 
-function! imap#ParseHeaders(headers)
-    let uid_match = '\(\d\+\)'
-    let date_match = '[^"]\+'
-    let subject_match = '\([^"]\+\)'
-    let from_match = '\%("\|\%(NIL \)\+"\)\([^"]\+\)"[^)]\+'
-    let match = '^\* '.uid_match.' FETCH (ENVELOPE ("'.date_match.'" \%(NIL\|"'.subject_match.'"\) (('.from_match.')) .*'
-    let dictionaries = []
-    for header in a:headers
-        let matches = matchlist(header, match)
-        let dict = {
-                    \ 'uid': get(matches, 1, 0),
-                    \ 'subject': get(matches, 2, header),
-                    \ 'from': get(matches, 3, "")
-                    \ }
-        call add(dictionaries, dict)
-    endfor
-    return dictionaries
-endfunction
-
 function! imap#RefreshHeaders(folder)
     call imap#CreateIfNecessary(a:folder)
     let file_path = mail#GetLocalFolder(a:folder).'/mail'
-    let list = imap#FolderUIDs(a:folder)
-    if len(list) > 0
-        let request = imap#CurlRequest(a:folder, "FETCH ".join(list, ',')." ALL")
-    else
-        let request = []
-    endif
-    let lines = filter(request, 'v:val =~# "^\* \\d\\+ FETCH"')
+    let lines = []
+
+ruby << EOF
+    folder = VIM::evaluate('a:folder')
+    imap   = Net::IMAP.vim_login
+    imap.select(folder)
+    lines  = []
+    imap.fetch(1..-1, ["ENVELOPE", "UID"]).each do |item|
+        envelope = item.attr["ENVELOPE"]
+        uid = item.attr["UID"]
+        name = envelope.from[0].name || ''
+        name = '$' + name + '$                             '
+        name.slice!(30..name.length)
+        lines << "*#{uid}*\t$#{name}$\t<>#{envelope.subject}<>"
+    end
+    VIM::command("let lines = #{lines.reverse}")
+    imap.vim_logout
+EOF
+
     call writefile(lines, file_path)
     return lines
 endfunction
@@ -73,7 +64,17 @@ endfunction
 function! imap#RefreshFolders(folder)
     call imap#CreateIfNecessary(a:folder)
     let file_path = mail#GetLocalFolder(a:folder).'/folder'
-    let lines = filter(imap#CurlRequest(a:folder, ""), 'v:val =~# "^\* LIST "')
+    let lines = []
+ruby << EOF
+    imap = Net::IMAP.vim_login
+    folder = VIM::evaluate('a:folder')
+    lines = []
+    imap.list(folder, "*").each do |f|
+        lines << f.name
+    end
+    imap.vim_logout
+    VIM::command("let lines = #{lines}")
+EOF
     call writefile(lines, file_path)
     return lines
 endfunction
@@ -93,14 +94,6 @@ function! imap#ListHeaders(folder)
     else
         let lines = imap#RefreshHeaders(a:folder)
     endif
-    let headers = imap#ParseHeaders(lines)
-    let lines = []
-    for header in headers
-        let uid = header['uid']
-        let subject = substitute(header['subject'], "$", "                                                            ", "")
-        let from = header['from']
-        call add(lines, printf("*%.4s*\t<>%.60s<>\t$%s$", uid, subject, from))
-    endfor
     return lines
 endfunction
 
@@ -111,18 +104,16 @@ function! imap#ListFolders(folder)
     else
         let lines = imap#RefreshFolders(a:folder)
     endif
-    call map(lines, 'substitute(v:val, "^\\* LIST (.*) \"/\" \"\\(.*\\)\"", "\\1", "")')
     return lines
 endfunction
 
 function! imap#ShowHeaders(folder)
-    let lines = reverse(imap#ListHeaders(a:folder))
     call mail#GotoBuffer()
     setlocal filetype=mailheaders
     let b:mail_folder = a:folder
     setlocal modifiable
     normal ggdG
-    call append(0, lines)
+    call append(0, imap#ListHeaders(a:folder))
     normal gg
     setlocal nomodifiable
     setlocal nomodified
@@ -155,13 +146,21 @@ endfunction
 function! imap#Mail(folder, uid)
     new
     let b:mail_folder = a:folder
-    let request = imap#CurlRequest(a:folder, 'FETCH '.a:uid.' (BODY[HEADER.FIELDS (FROM TO SUBJECT DATE)] BODY[TEXT])')
-    call filter(request, 'v:val !~# "\\(^\\* \\|^\\a\\d\\+ OK \\)"')
-    let header = remove(request, -7, -1)
-    call remove(header, 0)
-    call remove(header, -2, -1)
-    call append(0, header)
-    call append(line('$'), request)
+    let lines = []
+
+ruby << EOF
+    uid = VIM::evaluate('a:uid').to_i
+    folder = VIM::evaluate('a:folder')
+    imap = Net::IMAP.vim_login
+    imap.select(folder)
+    data = imap.fetch(imap.search(["UID", uid]), ["RFC822"])
+    imap.vim_logout
+    if data
+        VIM::command("let lines = #{data[0].attr["RFC822"].gsub(/\r\n|\r|\n/, '\n').split('\n')}")
+    end
+EOF
+
+    call append(0, lines)
     normal gg
     nnoremap <buffer> <silent> r :call smtp#Reply()<cr>
     setlocal filetype=mail

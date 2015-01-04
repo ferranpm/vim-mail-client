@@ -3,6 +3,8 @@ if !exists('g:mail_password')    | let g:mail_password    = ""            | endi
 if !exists('g:mail_smtp_server') | let g:mail_smtp_server = ""            | endif
 if !exists('g:mail_imap_server') | let g:mail_imap_server = ""            | endif
 if !exists('g:mail_folder')      | let g:mail_folder      = "~/.vim/mail" | endif
+if !exists('g:mail_imap_port')   | let g:mail_imap_port   = 993           | endif
+if !exists('g:mail_imap_ssl')    | let g:mail_imap_ssl    = 1             | endif
 
 command! -nargs=0 SMTPNew  call smtp#New()
 command! -nargs=0 SMTPSend call smtp#Send('%')

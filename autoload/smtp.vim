@@ -26,7 +26,7 @@ function! smtp#New()
     call setline(3, "Subject: ".mail_subject)
     call setline(4, "")
     call setline(5, "")
-    normal G
+    normal! G
 endfunction
 
 function! smtp#Reply(filename)

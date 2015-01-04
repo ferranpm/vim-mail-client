@@ -112,9 +112,9 @@ function! imap#ShowHeaders(folder)
     setlocal filetype=mailheaders
     let b:mail_folder = a:folder
     setlocal modifiable
-    normal ggdG
+    normal! ggdG
     call append(0, imap#ListHeaders(a:folder))
-    normal gg
+    normal! gg
     setlocal nomodifiable
     setlocal nomodified
     call imap#BasicMappings()
@@ -127,9 +127,9 @@ function! imap#ShowFolders(folder)
     let b:mail_folder = a:folder
     setlocal filetype=mailfolders
     setlocal modifiable
-    normal ggdG
+    normal! ggdG
     call append(0, lines)
-    normal gg
+    normal! gg
     setlocal nomodified
     setlocal nomodifiable
     call imap#BasicMappings()
@@ -180,9 +180,9 @@ ruby << EOF
     VIM::command("let lines = #{lines}")
 EOF
     setlocal modifiable
-    normal ggdG
+    normal! ggdG
     call append(0, lines)
-    normal gg
+    normal! gg
     nnoremap <buffer> <silent> r :call smtp#Reply(b:mail_file_path)<cr>
     setlocal filetype=mail
     setlocal foldmethod=syntax foldlevel=0

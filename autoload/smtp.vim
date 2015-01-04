@@ -60,15 +60,19 @@ EOF
 endfunction
 
 function! smtp#Send(filename)
-    let res = ""
-    let info = mail#Parse(a:filename)
-    for address in info['to']
-        let res = res.system('curl --url "'.g:mail_smtp_server.'" '.
-                    \ '--user "'.g:mail_address.':'.g:mail_password.'" '.
-                    \ '--mail-from "'.g:mail_address.'" '.
-                    \ '--mail-rcpt "'.address['address'].'" '.
-                    \ '--upload-file "'.expand(a:filename).'" '.
-                    \ '--ssl-reqd ')
-    endfor
-    echo res
+ruby << EOF
+    file = Mail.read(VIM::evaluate('a:filename'))
+    mail = Mail.new do
+        from    file.from[0]
+        to      file.to[0]
+        subject file.subject
+        body    file.body.to_s
+    end
+    server = VIM::evaluate('g:mail_smtp_server')
+    port   = VIM::evaluate('g:mail_smtp_port').to_i
+    username   = VIM::evaluate('g:mail_address')
+    password   = VIM::evaluate('g:mail_password')
+    mail.delivery_method :smtp, address: server, port: port, user_name: username, password: password
+    mail.deliver
+EOF
 endfunction

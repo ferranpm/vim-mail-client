@@ -8,12 +8,10 @@ function! smtp#New()
 
     " Get recipients
     let mail_to = []
-    let inp = "hola"
+    let inp = input("To: ")
     while inp != ""
+        call add(mail_to, inp)
         let inp = input("To: ")
-        if inp != ""
-            call add(mail_to, inp)
-        endif
     endwhile
 
     let mail_subject = input("Subject: ")
@@ -21,8 +19,9 @@ function! smtp#New()
     call inputrestore()
 
     setlocal filetype=mail
+
     call setline(1, "From: <".g:mail_address.">")
-    call setline(2, "To: <".join(mail_to, ">,<").">")
+    call setline(2, "To: <".join(mail_to, ">, <").">")
     call setline(3, "Subject: ".mail_subject)
     call setline(4, "")
     call setline(5, "")

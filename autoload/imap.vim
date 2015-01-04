@@ -1,4 +1,4 @@
-ruby require 'net/imap'
+ruby require 'net/imap'; require 'mail'
 
 ruby << EOF
 module Net
@@ -39,7 +39,6 @@ function! imap#RefreshHeaders(folder)
     call imap#CreateIfNecessary(a:folder)
     let file_path = mail#GetLocalFolder(a:folder).'/mail'
     let lines = []
-
 ruby << EOF
     folder = VIM::evaluate('a:folder')
     imap   = Net::IMAP.vim_login
@@ -49,14 +48,15 @@ ruby << EOF
         envelope = item.attr["ENVELOPE"]
         uid = item.attr["UID"]
         name = envelope.from[0].name || ''
-        name = '$' + name + '$                             '
+        name = '$' + Mail::Encodings.value_decode(name) + '$                             '
         name.slice!(30..name.length)
-        lines << "*#{uid}*\t$#{name}$\t<>#{envelope.subject}<>"
+        subject = envelope.subject || ''
+        subject = Mail::Encodings.value_decode(subject)
+        lines << "*#{uid}*\t$#{name}$\t<>#{subject}<>"
     end
     VIM::command("let lines = #{lines.reverse}")
     imap.vim_logout
 EOF
-
     call writefile(lines, file_path)
     return lines
 endfunction

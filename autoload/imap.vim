@@ -147,6 +147,7 @@ function! imap#Mail(folder, uid)
     let file_path = mail#GetLocalFolder(a:folder).'/'.a:uid.'.eml'
     call mail#GotoBuffer(string(a:uid))
     let b:mail_folder = a:folder
+    let b:mail_file_path = file_path
     if filereadable(file_path)
         let lines = readfile(file_path)
     else
@@ -182,7 +183,7 @@ EOF
     normal ggdG
     call append(0, lines)
     normal gg
-    nnoremap <buffer> <silent> r :call smtp#Reply()<cr>
+    nnoremap <buffer> <silent> r :call smtp#Reply(b:mail_file_path)<cr>
     setlocal filetype=mail
     setlocal foldmethod=syntax foldlevel=0
     setlocal nomodified

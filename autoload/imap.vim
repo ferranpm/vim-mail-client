@@ -108,7 +108,7 @@ function! imap#ListFolders(folder)
 endfunction
 
 function! imap#ShowHeaders(folder)
-    call mail#GotoBuffer()
+    call mail#GotoBuffer('MAIL')
     setlocal filetype=mailheaders
     let b:mail_folder = a:folder
     setlocal modifiable
@@ -123,7 +123,7 @@ endfunction
 
 function! imap#ShowFolders(folder)
     let lines = imap#ListFolders(a:folder)
-    call mail#GotoBuffer()
+    call mail#GotoBuffer('MAIL')
     let b:mail_folder = a:folder
     setlocal filetype=mailfolders
     setlocal modifiable

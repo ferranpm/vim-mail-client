@@ -198,7 +198,7 @@ ruby << EOF
     lines << "Subject: #{mail.subject}"
     lines << ""
     parts = mail.multipart? ? mail.parts.select { |p| p.content_type =~ /^text\/plain/ } : [mail]
-    if mail.multipart? and parts.empty? then parts.concat([mail]) end
+    if mail.multipart? and parts.empty? then parts = [mail] end
     lines.concat parts.map { |p| p.body.decoded.split(/\r\n|\r|\n/) }.flatten
     VIM::command("let lines = #{lines}")
 EOF

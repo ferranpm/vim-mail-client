@@ -69,7 +69,7 @@ endfunction
 function! smtp#Send(filename)
     call smtp#CheckFields()
 ruby << EOF
-    file = Mail.read(VIM::evaluate('a:filename'))
+    file = Mail.read(VIM::evaluate('expand(a:filename)'))
     mail = Mail.new do
         from    file.from[0]
         to      file.to[0]

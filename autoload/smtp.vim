@@ -1,5 +1,12 @@
 ruby require 'mail'
 
+function! smtp#CheckFields()
+    call mail#CheckField('g:mail_smtp_server')
+    call mail#CheckField('g:mail_smtp_port')
+    call mail#CheckField('g:mail_address')
+    call mail#CheckField('g:mail_password')
+endfunction
+
 function! smtp#New()
     let filename = '/tmp/vim_mail_'.localtime().'.eml'
     execute 'split '.filename
@@ -60,6 +67,7 @@ EOF
 endfunction
 
 function! smtp#Send(filename)
+    call smtp#CheckFields()
 ruby << EOF
     file = Mail.read(VIM::evaluate('a:filename'))
     mail = Mail.new do

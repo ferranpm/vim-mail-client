@@ -152,7 +152,9 @@ endfunction
 
 function! imap#BackFolder(folder)
     let list = split(a:folder, '/')
-    call remove(list, len(list) - 1)
+    if len(list) > 0
+        call remove(list, len(list) - 1)
+    endif
     return join(list, '/')
 endfunction
 

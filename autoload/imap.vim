@@ -118,6 +118,7 @@ function! imap#ShowHeaders(folder)
     setlocal nomodifiable
     setlocal nomodified
     call imap#BasicMappings()
+    nnoremap <buffer> <silent> d    :call imap#DeleteMail(b:mail_folder, matchstr(getline('.'), '^\*\zs\d\+'))<cr>
     nnoremap <buffer> <silent> <cr> :call imap#Mail(b:mail_folder, matchstr(getline('.'), '^\*\zs\d\+'))<cr>
 endfunction
 
@@ -141,6 +142,19 @@ function! imap#BackFolder(folder)
     let list = split(a:folder, '/')
     call remove(list, len(list) - 1)
     return join(list, '/')
+endfunction
+
+function! imap#DeleteMail(folder, uid)
+ruby << EOF
+    imap = Net::IMAP.vim_login
+    imap.select(VIM::evaluate('a:folder'))
+    uid = VIM::evaluate('a:uid').to_i
+    imap.uid_copy(uid, "Trash")
+    imap.uid_store(uid, "+FLAGS", [:Deleted])
+    imap.vim_logout
+EOF
+    call imap#RefreshHeaders(a:folder)
+    call imap#ShowHeaders(a:folder)
 endfunction
 
 function! imap#Mail(folder, uid)

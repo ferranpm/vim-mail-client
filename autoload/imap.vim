@@ -23,7 +23,7 @@ end
 EOF
 
 function! imap#BasicMappings()
-    nnoremap <buffer> <silent> R  :call imap#UpdateNew(b:mail_folder)<cr>:call imap#ShowHeaders(b:mail_folder)<cr>
+    nnoremap <buffer> <silent> R  :call imap#UpdateHeaders(b:mail_folder)<cr>:call imap#ShowHeaders(b:mail_folder)<cr>
     nnoremap <buffer> <silent> rf :call imap#RefreshFolders(b:mail_folder)<cr>:call imap#ShowFolders(b:mail_folder)<cr>
     nnoremap <buffer> <silent> b :call imap#ShowFolders(imap#BackFolder(b:mail_folder))<cr>
     return '%#StatusLineNC#R%#StatusLine#:\ Update\ mail\ %#StatusLineNC#rf%#StatusLine#:\ Refresh\ folders\ %#StatusLineNC#b%#StatusLine#:\ Go\ back\ folder'
@@ -125,7 +125,7 @@ function! imap#ListHeaders(folder)
     return lines
 endfunction
 
-function! imap#UpdateNew(folder)
+function! imap#UpdateHeaders(folder)
     call imap#ListHeaders(a:folder)
     let file_path = mail#GetLocalFolder(a:folder).'/mail'
     let lines = []

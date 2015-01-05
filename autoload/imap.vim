@@ -171,7 +171,7 @@ function! imap#ShowHeaders(folder)
     normal! gg
     setlocal nomodifiable
     setlocal nomodified
-    nnoremap <buffer> <silent> d    :call imap#DeleteMail(b:mail_folder, matchstr(getline('.'), '^\*\zs\d\+'))<cr>
+    nnoremap <buffer> <silent> d :call imap#DeleteMail(b:mail_folder, matchstr(getline('.'), '^\*\zs\d\+'))<cr>:call imap#ShowHeaders(b:mail_folder)<cr>
     nnoremap <buffer> <silent> l :call imap#Mail(b:mail_folder, matchstr(getline('.'), '^\*\zs\d\+'))<cr>
     nnoremap <buffer> <silent> <cr> :call imap#Mail(b:mail_folder, matchstr(getline('.'), '^\*\zs\d\+'))<cr>
     execute 'setlocal statusline=%#StatusLineNC#<cr>/l%#StatusLine#:\ Open\ Mail\ %#StatusLineNC#d%#StatusLine#:\ Delete\ Mail\ '.imap#BasicMappings()
@@ -260,6 +260,18 @@ ruby << EOF
     imap.uid_store(uid, "+FLAGS", [:Deleted])
     imap.vim_logout
 EOF
-    call imap#RefreshHeaders(a:folder)
-    call imap#ShowHeaders(a:folder)
+    let file_path = mail#GetLocalFolder(a:folder).'/'.a:uid.'.eml'
+    if filewritable(file_path)
+        call delete(file_path)
+    endif
+    let mail_path = mail#GetLocalFolder(a:folder).'/mail'
+    let lines = readfile(mail_path)
+    for line in lines
+        echo line
+        if match(line, "^\*".a:uid."\*") == 0
+            call remove(lines, index(lines, line))
+            call writefile(lines, mail_path)
+            return
+        endif
+    endfor
 endfunction

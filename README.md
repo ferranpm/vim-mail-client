@@ -42,6 +42,7 @@ listing, `<CR>` opens a new split with the message under the cursor.
 
 #### Mappings
 On a mail/folder listing window `rh` refreshes the list in the current folder
-and `rf` refreshes the current folder (and subfolders)
+and `rf` refreshes the current folder (and subfolders). To delete the message
+under the cursor, press `d`.
 
 When viewing a message press `r` to reply it.

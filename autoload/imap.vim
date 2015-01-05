@@ -43,6 +43,14 @@ function! imap#CheckFields()
     call mail#CheckField('g:mail_password'   , 'g:mail_imap_server')
 endfunction
 
+function! imap#BackFolder(folder)
+    let list = split(a:folder, '/')
+    if len(list) > 0
+        call remove(list, len(list) - 1)
+    endif
+    return join(list, '/')
+endfunction
+
 ruby << EOF
 def format_message_header message
     envelope = message.attr["ENVELOPE"]
@@ -160,27 +168,6 @@ function! imap#ShowFolders(folder)
     execute 'setlocal statusline=%#StatusLineNC#<cr>/l%#StatusLine#:\ Show\ Mails\ %#StatusLineNC#c%#StatusLine#:\ Show\ Folders\ '.imap#BasicMappings()
 endfunction
 
-function! imap#BackFolder(folder)
-    let list = split(a:folder, '/')
-    if len(list) > 0
-        call remove(list, len(list) - 1)
-    endif
-    return join(list, '/')
-endfunction
-
-function! imap#DeleteMail(folder, uid)
-ruby << EOF
-    imap = Net::IMAP.vim_login
-    imap.select(VIM::evaluate('a:folder'))
-    uid = VIM::evaluate('a:uid').to_i
-    imap.uid_copy(uid, "Trash")
-    imap.uid_store(uid, "+FLAGS", [:Deleted])
-    imap.vim_logout
-EOF
-    call imap#RefreshHeaders(a:folder)
-    call imap#ShowHeaders(a:folder)
-endfunction
-
 ruby << EOF
 def format_message message
     lines = []
@@ -236,4 +223,17 @@ EOF
     setlocal foldmethod=syntax
     setlocal nomodified
     setlocal nomodifiable
+endfunction
+
+function! imap#DeleteMail(folder, uid)
+ruby << EOF
+    imap = Net::IMAP.vim_login
+    imap.select(VIM::evaluate('a:folder'))
+    uid = VIM::evaluate('a:uid').to_i
+    imap.uid_copy(uid, "Trash")
+    imap.uid_store(uid, "+FLAGS", [:Deleted])
+    imap.vim_logout
+EOF
+    call imap#RefreshHeaders(a:folder)
+    call imap#ShowHeaders(a:folder)
 endfunction

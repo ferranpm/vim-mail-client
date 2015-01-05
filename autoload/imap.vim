@@ -208,7 +208,7 @@ EOF
     normal! gg
     nnoremap <buffer> <silent> r :call smtp#Reply(b:mail_file_path)<cr>
     setlocal filetype=mail
-    setlocal foldmethod=syntax foldlevel=0
+    setlocal foldmethod=syntax
     setlocal nomodified
     setlocal nomodifiable
 endfunction

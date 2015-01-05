@@ -36,3 +36,11 @@ endfunction
 function! mail#GetLocalFolder(folder)
     return expand(g:mail_folder.'/'.sha256(g:mail_address).'/'.a:folder)
 endfunction
+
+function! mail#CheckField(field)
+    call inputsave()
+    if !exists(a:field)
+        execute 'let '.a:field.' = input("'.a:field.': ")'
+    endif
+    call inputrestore()
+endfunction

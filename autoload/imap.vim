@@ -35,7 +35,15 @@ function! imap#CreateIfNecessary(folder)
     endif
 endfunction
 
+function! imap#CheckFields()
+    call mail#CheckField('g:mail_imap_server')
+    call mail#CheckField('g:mail_imap_port')
+    call mail#CheckField('g:mail_address')
+    call mail#CheckField('g:mail_password')
+endfunction
+
 function! imap#RefreshHeaders(folder)
+    call imap#CheckFields()
     call imap#CreateIfNecessary(a:folder)
     let file_path = mail#GetLocalFolder(a:folder).'/mail'
     let lines = []
@@ -62,6 +70,7 @@ EOF
 endfunction
 
 function! imap#RefreshFolders(folder)
+    call imap#CheckFields()
     call imap#CreateIfNecessary(a:folder)
     let file_path = mail#GetLocalFolder(a:folder).'/folder'
     let lines = []

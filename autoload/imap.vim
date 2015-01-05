@@ -206,12 +206,12 @@ ruby << EOF
         folder = VIM::evaluate('a:folder')
         imap = Net::IMAP.vim_login
         imap.select(folder)
-        data = imap.fetch(imap.search(["UID", uid]), ["RFC822"])
-        imap.vim_logout
-        if data
-            lines = data[0].attr["RFC822"].gsub(/\r\n|\r|\n/, '\n').split('\n')
-            VIM::command("let lines = #{lines}")
+        lines = []
+        imap.fetch(imap.search(["UID", uid]), ["RFC822"]).each do |data|
+            lines.concat(data.attr["RFC822"].gsub(/\r\n|\r|\n/, '\n').split('\n')) if data
         end
+        imap.vim_logout
+        VIM::command("let lines = #{lines}")
 EOF
         call writefile(lines, file_path)
     endif

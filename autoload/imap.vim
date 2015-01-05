@@ -72,7 +72,9 @@ ruby << EOF
     VIM::command("let lines = #{lines.reverse}")
     imap.vim_logout
 EOF
-    call writefile(lines, file_path)
+    if len(lines) > 0
+        call writefile(lines, file_path)
+    endif
     return lines
 endfunction
 
@@ -91,7 +93,9 @@ ruby << EOF
     imap.vim_logout
     VIM::command("let lines = #{lines}")
 EOF
-    call writefile(lines, file_path)
+    if len(lines) > 0
+        call writefile(lines, file_path)
+    endif
     return lines
 endfunction
 
@@ -213,7 +217,9 @@ ruby << EOF
         imap.vim_logout
         VIM::command("let lines = #{lines}")
 EOF
-        call writefile(lines, file_path)
+        if len(lines) > 0
+            call writefile(lines, file_path)
+        endif
     endif
 ruby << EOF
     mail = Mail.read(VIM::evaluate('file_path'))

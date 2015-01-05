@@ -224,7 +224,7 @@ ruby << EOF
         imap = Net::IMAP.vim_login
         imap.select(folder)
         lines = []
-        imap.fetch(imap.search(["UID", uid]), ["RFC822"]).each do |data|
+        imap.uid_fetch(uid, ["RFC822"]).each do |data|
             lines.concat(data.attr["RFC822"].gsub(/\r\n|\r|\n/, '\n').split('\n')) if data
         end
         imap.vim_logout

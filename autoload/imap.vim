@@ -47,7 +47,7 @@ ruby << EOF
     imap.fetch(1..-1, ["ENVELOPE", "UID"]).each do |item|
         envelope = item.attr["ENVELOPE"]
         uid = item.attr["UID"]
-        name = envelope.from[0].name || ''
+        name = envelope.from[0].name || ('<' << (envelope.from[0].mailbox || '') << '@' << (envelope.from[0].host || '') << '>')
         name = '$' + Mail::Encodings.value_decode(name) + '$                             '
         name.slice!(30..name.length)
         subject = envelope.subject || ''

@@ -36,10 +36,10 @@ function! imap#CreateIfNecessary(folder)
 endfunction
 
 function! imap#CheckFields()
-    call mail#CheckField('g:mail_imap_server')
-    call mail#CheckField('g:mail_imap_port')
-    call mail#CheckField('g:mail_address')
-    call mail#CheckField('g:mail_password')
+    call mail#CheckField('g:mail_imap_server', '')
+    call mail#CheckField('g:mail_imap_port'  , 'g:mail_imap_server')
+    call mail#CheckField('g:mail_address'    , 'g:mail_imap_server')
+    call mail#CheckField('g:mail_password'   , 'g:mail_imap_server')
 endfunction
 
 function! imap#RefreshHeaders(folder)

@@ -17,6 +17,16 @@ installation is easy:
     let g:mail_imap_port=993
     let g:mail_imap_ssl=1
 
+Address and password might as well be in `.netrc` or in a file specified by
+`g:mail_netrc`
+
+    machine imap.gmail.com
+        login myusername@gmail.com
+        password PassWord1234
+    machine smtp.gmail.com
+        login myusername@gmail.com
+        password PassWord1234
+
 ## Usage
 
 ### SMTP

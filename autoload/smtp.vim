@@ -1,10 +1,10 @@
 ruby require 'mail'
 
 function! smtp#CheckFields()
-    call mail#CheckField('g:mail_smtp_server')
-    call mail#CheckField('g:mail_smtp_port')
-    call mail#CheckField('g:mail_address')
-    call mail#CheckField('g:mail_password')
+    call mail#CheckField('g:mail_smtp_server', '')
+    call mail#CheckField('g:mail_smtp_port'  , 'g:mail_smtp_server')
+    call mail#CheckField('g:mail_address'    , 'g:mail_smtp_server')
+    call mail#CheckField('g:mail_password'   , 'g:mail_smtp_server')
 endfunction
 
 function! smtp#New()
@@ -27,6 +27,8 @@ function! smtp#New()
 
     setlocal filetype=mail
 
+    call mail#CheckField('g:mail_smtp_server', '')
+    call mail#CheckField('g:mail_address'    , 'g:mail_smtp_server')
     call setline(1, "From: <".g:mail_address.">")
     call setline(2, "To: <".join(mail_to, ">, <").">")
     call setline(3, "Subject: ".mail_subject)

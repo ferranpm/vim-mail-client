@@ -134,7 +134,7 @@ function! imap#ShowFolders(folder)
     setlocal nomodified
     setlocal nomodifiable
     call imap#BasicMappings()
-    nnoremap <buffer> <silent> l :call imap#ShowFolders(b:mail_folder.getline('.'))<cr>
+    nnoremap <buffer> <silent> l    :call imap#ShowHeaders(b:mail_folder.getline('.'))<cr>
     nnoremap <buffer> <silent> <cr> :call imap#ShowHeaders(b:mail_folder.getline('.'))<cr>
 endfunction
 

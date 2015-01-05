@@ -43,6 +43,19 @@ function! imap#CheckFields()
     call mail#CheckField('g:mail_password'   , 'g:mail_imap_server')
 endfunction
 
+ruby << EOF
+def format_message_header message
+    envelope = message.attr["ENVELOPE"]
+    uid = message.attr["UID"]
+    name = envelope.from[0].name || ('<' << (envelope.from[0].mailbox || '') << '@' << (envelope.from[0].host || '') << '>')
+    name = '$' + Mail::Encodings.value_decode(name) + '$                             '
+    name.slice!(30..name.length)
+    subject = envelope.subject || ''
+    subject = Mail::Encodings.value_decode(subject)
+    "*#{uid}*\t$#{name}$\t<>#{subject}<>"
+end
+EOF
+
 function! imap#RefreshHeaders(folder)
     call imap#CheckFields()
     call imap#CreateIfNecessary(a:folder)
@@ -54,14 +67,7 @@ ruby << EOF
     imap.select(folder)
     lines  = []
     imap.fetch(1..-1, ["ENVELOPE", "UID"]).each do |item|
-        envelope = item.attr["ENVELOPE"]
-        uid = item.attr["UID"]
-        name = envelope.from[0].name || ('<' << (envelope.from[0].mailbox || '') << '@' << (envelope.from[0].host || '') << '>')
-        name = '$' + Mail::Encodings.value_decode(name) + '$                             '
-        name.slice!(30..name.length)
-        subject = envelope.subject || ''
-        subject = Mail::Encodings.value_decode(subject)
-        lines << "*#{uid}*\t$#{name}$\t<>#{subject}<>"
+        lines << format_message_header(item)
     end
     VIM::command("let lines = #{lines.reverse}")
     imap.vim_logout
@@ -171,6 +177,22 @@ EOF
     call imap#ShowHeaders(a:folder)
 endfunction
 
+ruby << EOF
+def format_message message
+    lines = []
+    lines << "Date: #{message.date.to_s}"
+    lines << "From: <#{message.from.join('>, <')}>"
+    lines << "To: <#{message.to.join('>, <')}>"
+    if message.cc then lines << "CC: <#{message.cc.join('>, <')}>" end
+    lines << "Subject: #{message.subject}"
+    lines << ""
+    parts = message.multipart? ? message.parts.select { |p| p.content_type =~ /^text\/plain/ } : [message]
+    if message.multipart? and parts.empty? then parts = [message] end
+    lines.concat parts.map { |p| p.body.decoded.split(/\r\n|\r|\n/) }.flatten
+    lines
+end
+EOF
+
 function! imap#Mail(folder, uid)
     let file_path = mail#GetLocalFolder(a:folder).'/'.a:uid.'.eml'
     call mail#GotoBuffer(string(a:uid))
@@ -195,16 +217,7 @@ EOF
     endif
 ruby << EOF
     mail = Mail.read(VIM::evaluate('file_path'))
-    lines = []
-    lines << "Date: #{mail.date.to_s}"
-    lines << "From: <#{mail.from.join('>, <')}>"
-    lines << "To: <#{mail.to.join('>, <')}>"
-    if mail.cc then lines << "CC: <#{mail.cc.join('>, <')}>" end
-    lines << "Subject: #{mail.subject}"
-    lines << ""
-    parts = mail.multipart? ? mail.parts.select { |p| p.content_type =~ /^text\/plain/ } : [mail]
-    if mail.multipart? and parts.empty? then parts = [mail] end
-    lines.concat parts.map { |p| p.body.decoded.split(/\r\n|\r|\n/) }.flatten
+    lines = format_message(mail)
     VIM::command("let lines = #{lines}")
 EOF
     setlocal modifiable

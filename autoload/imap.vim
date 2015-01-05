@@ -23,10 +23,10 @@ end
 EOF
 
 function! imap#BasicMappings()
-    nnoremap <buffer> <silent> rh :call imap#RefreshHeaders(b:mail_folder)<cr>:call imap#ShowHeaders(b:mail_folder)<cr>
+    nnoremap <buffer> <silent> R  :call imap#UpdateNew(b:mail_folder)<cr>:call imap#ShowHeaders(b:mail_folder)<cr>
     nnoremap <buffer> <silent> rf :call imap#RefreshFolders(b:mail_folder)<cr>:call imap#ShowFolders(b:mail_folder)<cr>
     nnoremap <buffer> <silent> b :call imap#ShowFolders(imap#BackFolder(b:mail_folder))<cr>
-    return '%#StatusLineNC#rh%#StatusLine#:\ Refresh\ mail\ listing\ %#StatusLineNC#rf%#StatusLine#:\ Refresh\ folders\ %#StatusLineNC#b%#StatusLine#:\ Go\ back\ folder'
+    return '%#StatusLineNC#R%#StatusLine#:\ Update\ mail\ %#StatusLineNC#rf%#StatusLine#:\ Refresh\ folders\ %#StatusLineNC#b%#StatusLine#:\ Go\ back\ folder'
 endfunction
 
 function! imap#CreateIfNecessary(folder)
@@ -121,6 +121,32 @@ function! imap#ListHeaders(folder)
         let lines = readfile(file_path)
     else
         let lines = imap#RefreshHeaders(a:folder)
+    endif
+    return lines
+endfunction
+
+function! imap#UpdateNew(folder)
+    call imap#ListHeaders(a:folder)
+    let file_path = mail#GetLocalFolder(a:folder).'/mail'
+    let lines = []
+ruby << EOF
+    file = VIM::evaluate('file_path')
+    lines = IO.readlines(file)
+    if lines.length > 0
+        last_uid = lines[0].gsub(/^\*(\d+).*\*/, '\1').to_i
+        imap = Net::IMAP.vim_login
+        imap.select(VIM::evaluate('a:folder'))
+        imap.uid_fetch(last_uid..-1, ["ENVELOPE", "UID"]).each do |item|
+            formatted = format_message_header(item)
+            lines.unshift(formatted) if formatted.gsub(/^\*(\d+).*\*/, '\1').to_i > last_uid
+        end
+        lines.map! {|line| line.gsub(/\r\n|\r|\n/, '')}
+        VIM::command("let lines = #{lines}")
+        imap.vim_logout
+    end
+EOF
+    if len(lines) > 0
+         call writefile(lines, file_path)
     endif
     return lines
 endfunction

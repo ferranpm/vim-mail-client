@@ -26,6 +26,7 @@ function! imap#BasicMappings()
     nnoremap <buffer> <silent> rh :call imap#RefreshHeaders(b:mail_folder)<cr>:call imap#ShowHeaders(b:mail_folder)<cr>
     nnoremap <buffer> <silent> rf :call imap#RefreshFolders(b:mail_folder)<cr>:call imap#ShowFolders(b:mail_folder)<cr>
     nnoremap <buffer> <silent> b :call imap#ShowFolders(imap#BackFolder(b:mail_folder))<cr>
+    return '%#StatusLineNC#rh%#StatusLine#:\ Refresh\ mail\ listing\ %#StatusLineNC#rf%#StatusLine#:\ Refresh\ folders\ %#StatusLineNC#b%#StatusLine#:\ Go\ back\ folder'
 endfunction
 
 function! imap#CreateIfNecessary(folder)
@@ -126,9 +127,10 @@ function! imap#ShowHeaders(folder)
     normal! gg
     setlocal nomodifiable
     setlocal nomodified
-    call imap#BasicMappings()
     nnoremap <buffer> <silent> d    :call imap#DeleteMail(b:mail_folder, matchstr(getline('.'), '^\*\zs\d\+'))<cr>
+    nnoremap <buffer> <silent> l :call imap#Mail(b:mail_folder, matchstr(getline('.'), '^\*\zs\d\+'))<cr>
     nnoremap <buffer> <silent> <cr> :call imap#Mail(b:mail_folder, matchstr(getline('.'), '^\*\zs\d\+'))<cr>
+    execute 'setlocal statusline=%#StatusLineNC#<cr>/l%#StatusLine#:\ Open\ Mail\ %#StatusLineNC#d%#StatusLine#:\ Delete\ Mail\ '.imap#BasicMappings()
 endfunction
 
 function! imap#ShowFolders(folder)
@@ -142,9 +144,10 @@ function! imap#ShowFolders(folder)
     normal! gg
     setlocal nomodified
     setlocal nomodifiable
-    call imap#BasicMappings()
+    nnoremap <buffer> <silent> c    :call imap#ShowFolders(b:mail_folder.getline('.'))<cr>
     nnoremap <buffer> <silent> l    :call imap#ShowHeaders(b:mail_folder.getline('.'))<cr>
     nnoremap <buffer> <silent> <cr> :call imap#ShowHeaders(b:mail_folder.getline('.'))<cr>
+    execute 'setlocal statusline=%#StatusLineNC#<cr>/l%#StatusLine#:\ Show\ Mails\ %#StatusLineNC#c%#StatusLine#:\ Show\ Folders\ '.imap#BasicMappings()
 endfunction
 
 function! imap#BackFolder(folder)
@@ -206,6 +209,7 @@ EOF
     normal! ggdG
     call append(0, lines)
     normal! gg
+    setlocal statusline=%#StatusLineNC#r%#StatusLine#:\ Reply
     nnoremap <buffer> <silent> r :call smtp#Reply(b:mail_file_path)<cr>
     setlocal filetype=mail
     setlocal foldmethod=syntax

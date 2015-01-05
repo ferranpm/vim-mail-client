@@ -4,9 +4,11 @@ function! mail#GotoBuffer(buffer)
         set switchbuf=useopen
         execute 'vertical sbuffer '.a:buffer
         execute 'set switchbuf='.switchbuf
+        return 1
     else
         new
         execute 'file '.a:buffer
+        return 0
     endif
 endfunction
 

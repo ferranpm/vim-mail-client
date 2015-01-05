@@ -7,4 +7,4 @@ if !exists('g:mail_imap_ssl')    | let g:mail_imap_ssl    = 1             | endi
 command! -nargs=0 SMTPNew  call smtp#New()
 command! -nargs=0 SMTPSend call smtp#Send('%')
 
-command! -nargs=0 Mail call imap#ShowFolders("")
+command! -nargs=0 Mail if !mail#GotoBuffer('MAIL') | call imap#ShowFolders("") | endif

@@ -75,9 +75,23 @@ EOF
     normal! gg}O
 endfunction
 
+function! smtp#AttachWrapper()
+    call inputsave()
+    let file = input("File: ", "", "file")
+    call inputrestore()
+    if match(file, "^$") != 0
+        call smtp#Attach(file)
+    endif
+endfunction
+
 function! smtp#Attach(filename)
     call add(g:mail_attachments, a:filename)
     echo "Added ".a:filename
+endfunction
+
+function! smtp#SendWrapper()
+    update
+    call smtp#Send('%')
 endfunction
 
 function! smtp#Send(filename)

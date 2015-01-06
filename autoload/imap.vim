@@ -136,6 +136,8 @@ ruby << EOF
         lines.map! {|line| line.gsub(/\r\n|\r|\n/, '')}
         VIM::command("let lines = #{lines}")
         imap.vim_logout
+    else
+        Vim::command('call imap#RefreshHeaders(a:folder)')
     end
 EOF
     if len(lines) > 0

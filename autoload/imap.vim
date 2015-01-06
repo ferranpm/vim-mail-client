@@ -57,6 +57,34 @@ def format_message_header message
 end
 EOF
 
+function! imap#UpdateHeaders(folder)
+    call imap#ListHeaders(a:folder)
+    let file_path = mail#GetLocalFolder(a:folder).'/mail'
+    let lines = []
+ruby << EOF
+    file = VIM::evaluate('file_path')
+    lines = IO.readlines(file)
+    if lines.length > 0
+        last_uid = lines[0].gsub(/^\*(\d+).*\*/, '\1').to_i
+        imap = Net::IMAP.vim_login
+        imap.select(VIM::evaluate('a:folder'))
+        imap.uid_fetch(last_uid..-1, ["ENVELOPE", "UID"]).each do |item|
+            formatted = format_message_header(item)
+            lines.unshift(formatted) if formatted.gsub(/^\*(\d+).*\*/, '\1').to_i > last_uid
+        end
+        lines.map! {|line| line.gsub(/\r\n|\r|\n/, '')}
+        VIM::command("let lines = #{lines}")
+        imap.vim_logout
+    else
+        Vim::command('call imap#RefreshHeaders(a:folder)')
+    end
+EOF
+    if len(lines) > 0
+         call writefile(lines, file_path)
+    endif
+    return lines
+endfunction
+
 function! imap#RefreshHeaders(folder)
     call imap#CheckFields()
     call mail#CreateIfNecessary(a:folder)
@@ -118,34 +146,6 @@ function! imap#ListHeaders(folder)
     return lines
 endfunction
 
-function! imap#UpdateHeaders(folder)
-    call imap#ListHeaders(a:folder)
-    let file_path = mail#GetLocalFolder(a:folder).'/mail'
-    let lines = []
-ruby << EOF
-    file = VIM::evaluate('file_path')
-    lines = IO.readlines(file)
-    if lines.length > 0
-        last_uid = lines[0].gsub(/^\*(\d+).*\*/, '\1').to_i
-        imap = Net::IMAP.vim_login
-        imap.select(VIM::evaluate('a:folder'))
-        imap.uid_fetch(last_uid..-1, ["ENVELOPE", "UID"]).each do |item|
-            formatted = format_message_header(item)
-            lines.unshift(formatted) if formatted.gsub(/^\*(\d+).*\*/, '\1').to_i > last_uid
-        end
-        lines.map! {|line| line.gsub(/\r\n|\r|\n/, '')}
-        VIM::command("let lines = #{lines}")
-        imap.vim_logout
-    else
-        Vim::command('call imap#RefreshHeaders(a:folder)')
-    end
-EOF
-    if len(lines) > 0
-         call writefile(lines, file_path)
-    endif
-    return lines
-endfunction
-
 function! imap#ListFolders(folder)
     let file_path = mail#GetLocalFolder(a:folder).'/folder'
     if filereadable(file_path)
@@ -167,8 +167,8 @@ function! imap#ShowHeaders(folder)
     setlocal nomodifiable
     setlocal nomodified
     nnoremap <buffer> <silent> d :call imap#DeleteMail(b:mail_folder, matchstr(getline('.'), '^\*\zs\d\+'))<cr>:call imap#ShowHeaders(b:mail_folder)<cr>
-    nnoremap <buffer> <silent> l :call imap#Mail(b:mail_folder, matchstr(getline('.'), '^\*\zs\d\+'))<cr>
-    nnoremap <buffer> <silent> <cr> :call imap#Mail(b:mail_folder, matchstr(getline('.'), '^\*\zs\d\+'))<cr>
+    nnoremap <buffer> <silent> l :call imap#ShowMail(b:mail_folder, matchstr(getline('.'), '^\*\zs\d\+'))<cr>
+    nnoremap <buffer> <silent> <cr> :call imap#ShowMail(b:mail_folder, matchstr(getline('.'), '^\*\zs\d\+'))<cr>
     execute 'setlocal statusline=%#StatusLineNC#<cr>/l%#StatusLine#:\ Open\ Mail\ %#StatusLineNC#d%#StatusLine#:\ Delete\ Mail\ '.imap#BasicMappings()
 endfunction
 
@@ -205,7 +205,7 @@ def format_message message
 end
 EOF
 
-function! imap#Mail(folder, uid)
+function! imap#ShowMail(folder, uid)
     let file_path = mail#GetLocalFolder(a:folder).'/'.a:uid.'.eml'
     call mail#GotoBuffer(string(a:uid))
     let b:mail_folder = a:folder

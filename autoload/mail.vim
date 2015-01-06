@@ -50,3 +50,10 @@ function! mail#CheckField(field, machine)
     endif
     call inputrestore()
 endfunction
+
+function! mail#CreateIfNecessary(folder)
+    let local_path = mail#GetLocalFolder(a:folder)
+    if !isdirectory(local_path)
+        call mkdir(local_path, "p")
+    endif
+endfunction

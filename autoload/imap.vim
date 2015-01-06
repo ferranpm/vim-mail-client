@@ -29,13 +29,6 @@ function! imap#BasicMappings()
     return '%#StatusLineNC#R%#StatusLine#:\ Update\ mail\ %#StatusLineNC#rf%#StatusLine#:\ Refresh\ folders\ %#StatusLineNC#b%#StatusLine#:\ Go\ back\ folder'
 endfunction
 
-function! imap#CreateIfNecessary(folder)
-    let local_path = mail#GetLocalFolder(a:folder)
-    if !isdirectory(local_path)
-        call mkdir(local_path, "p")
-    endif
-endfunction
-
 function! imap#CheckFields()
     call mail#CheckField('g:mail_imap_server', '')
     call mail#CheckField('g:mail_imap_port'  , 'g:mail_imap_server')
@@ -66,7 +59,7 @@ EOF
 
 function! imap#RefreshHeaders(folder)
     call imap#CheckFields()
-    call imap#CreateIfNecessary(a:folder)
+    call mail#CreateIfNecessary(a:folder)
     let file_path = mail#GetLocalFolder(a:folder).'/mail'
     let lines = []
 ruby << EOF
@@ -88,7 +81,7 @@ endfunction
 
 function! imap#RefreshFolders(folder)
     call imap#CheckFields()
-    call imap#CreateIfNecessary(a:folder)
+    call mail#CreateIfNecessary(a:folder)
     let file_path = mail#GetLocalFolder(a:folder).'/folder'
     let lines = []
 ruby << EOF

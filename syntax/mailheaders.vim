@@ -8,5 +8,5 @@ syn match from    '<>.*<>'   contains=delimiter
 
 hi def link delimiter Ignore
 hi def link uid  Number
-hi def link from Type
-hi def link subject Constant
+hi def link from Identifier
+hi def link subject String

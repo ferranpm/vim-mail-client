@@ -12,12 +12,6 @@ function! mail#GotoBuffer(buffer)
     endif
 endfunction
 
-" Returns a dictionary containing the alias of the address (if present) and
-" the email address
-function! mail#ParseAddress(address)
-    return {'alias': matchstr(a:address, '.*\ze<.*>'), 'address': matchstr(a:address, '<\zs.*\ze>')}
-endfunction
-
 function! mail#GetLocalFolder(folder)
     if exists('g:mail_netrc')
         call mail#ParseNetrc(g:mail_netrc, 'g:mail_imap_server')

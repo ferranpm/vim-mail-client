@@ -157,7 +157,7 @@ function! imap#ListFolders(folder)
 endfunction
 
 function! imap#ShowHeaders(folder)
-    call mail#GotoBuffer('MAIL')
+    call mail#GotoBuffer('MAIL', 'tabe')
     setlocal filetype=mailheaders
     let b:mail_folder = a:folder
     setlocal modifiable
@@ -174,7 +174,7 @@ endfunction
 
 function! imap#ShowFolders(folder)
     let lines = imap#ListFolders(a:folder)
-    call mail#GotoBuffer('MAIL')
+    call mail#GotoBuffer('MAIL', 'tabe')
     let b:mail_folder = a:folder
     setlocal filetype=mailfolders
     setlocal modifiable
@@ -207,7 +207,7 @@ EOF
 
 function! imap#ShowMail(folder, uid)
     let file_path = mail#GetLocalFolder(a:folder).'/'.a:uid.'.eml'
-    call mail#GotoBuffer(string(a:uid))
+    call mail#GotoBuffer(string(a:uid), 'new')
     let b:mail_folder = a:folder
     let b:mail_file_path = file_path
     if filereadable(file_path)

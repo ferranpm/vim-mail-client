@@ -70,6 +70,7 @@ ruby << EOF
     lines.concat parts.flatten
     VIM::command("let lines = #{lines}")
 EOF
+    bwipeout
     call smtp#NewBuffer()
     call append(0, lines)
     normal! gg}O

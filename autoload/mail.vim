@@ -1,12 +1,12 @@
-function! mail#GotoBuffer(buffer)
+function! mail#GotoBuffer(buffer, initialize)
     if bufexists(a:buffer)
         let switchbuf=&switchbuf
-        set switchbuf=useopen
-        execute 'vertical sbuffer '.a:buffer
+        set switchbuf=usetab
+        execute 'sbuffer '.a:buffer
         execute 'set switchbuf='.switchbuf
         return 1
     else
-        new
+        execute a:initialize
         execute 'file '.a:buffer
         return 0
     endif

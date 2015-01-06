@@ -7,10 +7,17 @@ function! smtp#CheckFields()
     call mail#CheckField('g:mail_password'   , 'g:mail_smtp_server')
 endfunction
 
-function! smtp#New()
-    let filename = '/tmp/vim_mail_'.localtime().'.eml'
+function! smtp#NewBuffer()
+    call mail#CreateIfNecessary('Sent')
+    let filename = mail#GetLocalFolder('Sent').'/'.localtime().'.eml'
     execute 'split '.filename
+    let b:mail_attachments = []
+    nnoremap <buffer> <silent> <C-s> :call smtp#SendWrapper()<cr>
+    nnoremap <buffer> <silent> <C-a> :call smtp#AttachWrapper()<cr>
+    setlocal statusline=%#StatusLineNC#<C-s>%#StatusLine#:\ Send%#StatusLineNC#<C-a>%#StatusLine#:\ Attach\ File
+endfunction
 
+function! smtp#New()
     call inputsave()
 
     " Get recipients
@@ -25,6 +32,7 @@ function! smtp#New()
 
     call inputrestore()
 
+    call smtp#NewBuffer()
     setlocal filetype=mail
 
     call mail#CheckField('g:mail_smtp_server', '')
@@ -38,8 +46,6 @@ function! smtp#New()
 endfunction
 
 function! smtp#Reply(filename)
-    let new_file = '/tmp/vim_mail_'.localtime().'.eml'
-    execute 'e '.new_file
 ruby << EOF
     mail = Mail.read(VIM::evaluate('a:filename'))
     own_address = VIM::evaluate('g:mail_address')
@@ -64,6 +70,7 @@ ruby << EOF
     lines.concat parts.flatten
     VIM::command("let lines = #{lines}")
 EOF
+    call smtp#NewBuffer()
     call append(0, lines)
     normal! gg}O
 endfunction

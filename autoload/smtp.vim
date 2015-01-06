@@ -14,7 +14,7 @@ function! smtp#NewBuffer()
     let b:mail_attachments = []
     nnoremap <buffer> <silent> <C-s> :call smtp#SendWrapper()<cr>
     nnoremap <buffer> <silent> <C-a> :call smtp#AttachWrapper()<cr>
-    setlocal statusline=%#StatusLineNC#<C-s>%#StatusLine#:\ Send%#StatusLineNC#<C-a>%#StatusLine#:\ Attach\ File
+    setlocal statusline=%#StatusLineNC#<C-s>%#StatusLine#:\ Send\ %#StatusLineNC#<C-a>%#StatusLine#:\ Attach\ File%=Attachments:%{string(b:mail_attachments)}
 endfunction
 
 function! smtp#New()
@@ -87,12 +87,12 @@ endfunction
 
 function! smtp#Attach(filename)
     call add(b:mail_attachments, expand(a:filename))
-    echo "Added ".a:filename
 endfunction
 
 function! smtp#SendWrapper()
     update
     call smtp#Send('%')
+    bwipeout
 endfunction
 
 function! smtp#Send(filename)

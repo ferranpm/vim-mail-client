@@ -232,18 +232,41 @@ EOF
 ruby << EOF
     mail = Mail.read(VIM::evaluate('file_path'))
     lines = format_message(mail)
+    VIM::command("let attachments = #{mail.attachments.length}")
     VIM::command("let lines = #{lines}")
 EOF
     setlocal modifiable
     normal! ggdG
     call append(0, lines)
     normal! gg
-    setlocal statusline=%#StatusLineNC#r%#StatusLine#:\ Reply
+    execute 'setlocal statusline=%#StatusLineNC#r%#StatusLine#:\ Reply\ %#StatusLineNC#s%#StatusLine#:\ Save\ Attachments%='.attachments.'\ attachments'
+    nnoremap <buffer> <silent> s :call imap#SaveAttachments(b:mail_file_path)<cr>
     nnoremap <buffer> <silent> r :call smtp#Reply(b:mail_file_path)<cr>
     setlocal filetype=mail
     setlocal foldmethod=syntax
     setlocal nomodified
     setlocal nomodifiable
+endfunction
+
+function! imap#SaveAttachments(filename)
+    call inputsave()
+    let path = input("Directory: ", "", "dir")
+    call inputrestore()
+    if match(path, "^$") == 0
+        return
+    endif
+ruby << EOF
+    mail = Mail.read(VIM::evaluate('expand(a:filename)'))
+    dir = VIM::evaluate('expand(path)')
+    mail.attachments.each do |attachment|
+        filename = attachment.filename
+        begin
+            File.open(dir + filename, "w+b", 0644) {|f| f.write attachment.body.decoded}
+        rescue => e
+            puts "Unable to save data for #{filename} because #{e.message}"
+        end
+    end
+EOF
 endfunction
 
 function! imap#DeleteMail(folder, uid)

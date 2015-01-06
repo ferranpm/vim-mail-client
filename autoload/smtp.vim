@@ -68,6 +68,11 @@ EOF
     normal! gg}O
 endfunction
 
+function! smtp#Attach(filename)
+    call add(g:mail_attachments, a:filename)
+    echo "Added ".a:filename
+endfunction
+
 function! smtp#Send(filename)
     call smtp#CheckFields()
 ruby << EOF
@@ -77,6 +82,10 @@ ruby << EOF
         to      file.to[0]
         subject file.subject
         body    file.body.to_s
+    end
+    attachments = VIM::evaluate('join(g:mail_attachments, "\t")')
+    attachments.split(/\t/).each do |filename|
+        mail.add_file(filename)
     end
     server = VIM::evaluate('g:mail_smtp_server')
     port   = VIM::evaluate('g:mail_smtp_port').to_i

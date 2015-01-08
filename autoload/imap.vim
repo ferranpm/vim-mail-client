@@ -209,6 +209,7 @@ function! imap#ShowMail(folder, uid)
     let file_path = mail#GetLocalFolder(a:folder).'/'.a:uid.'.eml'
     call mail#GotoBuffer(string(a:uid), 'new')
     let b:mail_folder = a:folder
+    let b:mail_uid = a:uid
     let b:mail_file_path = file_path
     if filereadable(file_path)
         let lines = readfile(file_path)
@@ -239,13 +240,40 @@ EOF
     normal! ggdG
     call append(0, lines)
     normal! gg
-    execute 'setlocal statusline=%#StatusLineNC#r%#StatusLine#:\ Reply\ %#StatusLineNC#s%#StatusLine#:\ Save\ Attachments%='.attachments.'\ attachments'
+    execute 'setlocal statusline=%#StatusLineNC#r%#StatusLine#:\ Reply\ %#StatusLineNC#s%#StatusLine#:\ Save\ Attachments\ %#StatusLineNC#a%#StatusLine#:\ Archive%='.attachments.'\ attachments'
     nnoremap <buffer> <silent> s :call imap#SaveAttachments(b:mail_file_path)<cr>
     nnoremap <buffer> <silent> r :call smtp#Reply(b:mail_file_path)<cr>
+    nnoremap <buffer> <silent> a :call imap#ArchiveWrapper(b:mail_folder, b:mail_uid)<cr>
     setlocal filetype=mail
     setlocal foldmethod=syntax
     setlocal nomodified
     setlocal nomodifiable
+endfunction
+
+function! imap#Archive(folder_orig, folder_dest, uid)
+ruby << EOF
+    imap = Net::IMAP.vim_login
+    imap.select(VIM::evaluate('a:folder_orig'))
+    uid = VIM::evaluate('a:uid').to_i
+    imap.uid_copy(uid, VIM::evaluate('a:folder_dest'))
+    imap.uid_store(uid, "+FLAGS", [:Deleted])
+    imap.vim_logout
+EOF
+    let orig = mail#GetLocalFolder(a:folder_orig).'/'.a:uid.'.eml'
+    call delete(orig)
+    call imap#RefreshHeaders(b:mail_folder)
+endfunction
+
+function! imap#ArchiveWrapper(folder, uid)
+    call inputsave()
+    let dest = input("Folder: ", "")
+    call inputrestore()
+    if dest =~ "^$"
+        return
+    endif
+    call imap#Archive(a:folder, dest, a:uid)
+    bwipeout
+    call imap#ShowHeaders(b:mail_folder)
 endfunction
 
 function! imap#SaveAttachments(filename)

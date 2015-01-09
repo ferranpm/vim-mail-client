@@ -47,13 +47,13 @@ endfunction
 ruby << EOF
 def format_message_header message
     envelope = message.attr["ENVELOPE"]
-    uid = message.attr["UID"]
+    uid = '*' + message.attr["UID"].to_s + '*'
     name = envelope.from[0].name || ('<' << (envelope.from[0].mailbox || '') << '@' << (envelope.from[0].host || '') << '>')
-    name = '$' + Mail::Encodings.value_decode(name) + '$                             '
-    name.slice!(30..name.length)
+    name = Mail::Encodings.value_decode(name) + '                             '
+    name = '$$' + name.slice(0..30) + '$$'
     subject = envelope.subject || ''
-    subject = Mail::Encodings.value_decode(subject)
-    "*#{uid}*\t$#{name}$\t<>#{subject}<>"
+    subject = '<>' + Mail::Encodings.value_decode(subject) + '<>'
+    "#{uid}\t#{name}\t#{subject}"
 end
 EOF
 

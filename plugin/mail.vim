@@ -4,4 +4,4 @@ if !exists('g:mail_imap_ssl')    | let g:mail_imap_ssl    = 1             | endi
 let g:mail_visited = []
 
 command! -nargs=0 WriteMail  call smtp#New()
-command! -nargs=0 Mail if !mail#GotoBuffer('MAIL', 'tabe') | call imap#ShowFolders("") | endif
+command! -nargs=0 Mail if !mail#GotoBuffer('MAIL', 'tabe') | call imap#ShowHeaders("INBOX") | endif

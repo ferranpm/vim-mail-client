@@ -160,6 +160,7 @@ function! imap#ShowHeaders(folder)
     if index(g:mail_visited, a:folder) == -1
         call imap#RefreshHeaders(a:folder)
         call add(g:mail_visited, a:folder)
+        call writefile(g:mail_visited, g:mail_tmp_file)
     end
     call mail#GotoBuffer('MAIL', 'tabe')
     setlocal filetype=mailheaders

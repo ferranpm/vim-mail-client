@@ -157,6 +157,10 @@ function! imap#ListFolders(folder)
 endfunction
 
 function! imap#ShowHeaders(folder)
+    if index(g:mail_visited, a:folder) == -1
+        call imap#RefreshHeaders(a:folder)
+        call add(g:mail_visited, a:folder)
+    end
     call mail#GotoBuffer('MAIL', 'tabe')
     setlocal filetype=mailheaders
     let b:mail_folder = a:folder

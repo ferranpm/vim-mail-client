@@ -8,5 +8,8 @@ else
     let g:mail_visited = readfile(g:mail_tmp_file)
 endif
 
+rubyfile ~/.vim/bundle/mail/autoload/imap.rb
+rubyfile ~/.vim/bundle/mail/autoload/smtp.rb
+
 command! -nargs=0 WriteMail  call smtp#New()
 command! -nargs=0 Mail if !mail#GotoBuffer('MAIL', 'tabe') | call imap#ShowHeaders("INBOX") | endif
